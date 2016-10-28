@@ -1,7 +1,7 @@
 (function() {
-  var margin = { top: 30, left: 50, right: 30, bottom: 30},
+  var margin = { top: 20, left: 75, right: 20, bottom: 20},
   height = 500 - margin.top - margin.bottom,
-  width = 700 - margin.left - margin.right;
+  width = 750 - margin.left - margin.right;
 
   var svg = d3.select("#graphic")
         .append("svg")
@@ -13,6 +13,17 @@
   /*** MISCELLANEOUS STUFF ***/
   var parseDate = d3.timeParse("%Y-%m-%d");
   var months = ["Jan", "Feb", "March", "April", "May", "June", "July", "Aug", "Sept", "Oct", "Nov", "Dec"];
+  var monthsWithoutSummer = ["Jan", "Feb", "March", "April", "May", "Sept", "Oct", "Nov", "Dec"];
+  var days = ["Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday", "Sunday"];
+  var times = ["12am", "1am", "2am", "3am", "4am", "5am", "6am", "7am", "8am", "9am", "10am", "11am", "12pm", "1pm", "2pm", "3pm", "4pm", "5pm", "6pm", "7pm", "8pm", "9pm", "10pm", "11pm"];
+  var isSummer = function(month) {
+    return month == "June" || month == "July" || month == "Aug";
+  };
+  var heatmapData = [];
+  for (i = 0; i < 7*24; i++) {
+    heatmapData.push(i);
+  }
+  var gridSize = Math.floor(width / 24);
   var barColor = "#2b8cbe";
   var lineColor = "#74a9cf";
   var TenThouStepsColor = "#045a8d";
@@ -39,6 +50,8 @@
 
   /*** FUNCTION TO CALL WHEN DATA IS LOADED ***/
   function ready(error, datapoints) {
+
+    /*** CALCULATING MONTHLY AVERAGES AND HEALTHY DAY COUNTS ***/
     month_counts = [];
     for (i = 0; i < 12; i++) {
       month_counts.push({"month": months[i], "healthyCount": 0, "count":0.0, "total":0.0});
@@ -57,8 +70,6 @@
       month_counts[i].average = (month_counts[i].total / month_counts[i].count);
     }
 
-    console.log(month_counts);
-
     /*** SHAPE FUNCTIONS ***/
     var line = d3.line()
       .x(function(d) { return lineGraphX(d.date); })
@@ -68,30 +79,34 @@
     lineGraphX.domain(d3.extent(datapoints, function(d) { return d.date; }));
     lineGraphY.domain([0, d3.max(datapoints, function(d) { return d.steps; })]);
 
-    barGraphX.domain(month_counts.map(function(d) { return d.month; }));
+    barGraphX.domain(months);
     healthyBarGraphY.domain([0, d3.max(month_counts, function(d) { return d.healthyCount; })]);
     averageBarGraphY.domain([0, d3.max(month_counts, function(d) { return d.average; })]);
 
     /*** BAR GRAPH BARS, ZERO HEIGHT ***/
     svg.selectAll(".monthBar")
       .data(month_counts).enter().append("rect")
-      .attr("class", "monthBar")
+      .attr("class", function(d) { 
+        return (isSummer(d.month) ? "monthBar summer" : "monthBar school");
+      })
       .attr("id", function(d, i) { return months[i]})
       .attr("x", function(d) { return barGraphX(d.month); })
       .attr("y", height)
       .attr("width", barGraphX.bandwidth())
       .attr("height", 0)
       .attr("fill", barColor)
-      .attr("opacity", 0);
+      .attr("opacity", 1);
 
     /*** LINE GRAPH AXES ***/
     svg.append("g")
       .attr("class", "axis axisX")
       .attr("transform", "translate(0," + height + ")")
+      .attr("opacity", 1)
       .call(d3.axisBottom(lineGraphX));
 
     svg.append("g")
       .attr("class", "axis axisY")
+      .attr("opacity", 1)
       .call(d3.axisLeft(lineGraphY))
       .append("text")
       .attr("id", "yLabel")
@@ -103,7 +118,7 @@
       .text("# Of Steps");
 
     /*** LINE GRAPH LINE ***/
-    svg.append("g").attr("id","lineGraphContainer").append("path")
+    svg.append("path")
       .attr("id", "lineGraphPath")
       .attr("d", line(datapoints))
       .attr("fill", "none")
@@ -139,14 +154,47 @@
       .attr("stroke-width", "4px")
       .attr("opacity", 0);
 
+    /*** HEATMAP LABELS ***/
+    var heatmapContainer = svg.append("g")
+      .attr("id", "heatmapContainer")
+      .attr("transform", "translate(0," + ((height / 2) - ((gridSize * days.length) / 2)) + ")")
+      .attr("opacity", 0);
+
+    heatmapContainer.append("g").attr("id", "dayLabels")
+      .selectAll(".dayLabel").data(days).enter().append("text")
+        .text(function (d) { return d; })
+        .attr("x", 0)
+        .attr("y", function (d, i) { return i * gridSize; })
+        .style("text-anchor", "end")
+        .attr("transform", "translate(-6," + gridSize / 1.5+ ")")
+        .attr("class", "dayLabel");
+
+    heatmapContainer.append("g").attr("id", "timeLabels")
+      .selectAll(".timeLabel").data(times).enter().append("text")
+        .text(function(d) { return d; })
+        .attr("x", function(d, i) { return i * gridSize; })
+        .attr("y", 0)
+        .style("text-anchor", "middle")
+        .style("font-size", "10px")
+        .attr("transform", "translate(" + gridSize / 2 + ", -6)")
+        .attr("class", "timeLabel");
+
+    heatmapContainer.selectAll("rect.minute")
+      .data(heatmapData).enter().append("rect")
+      .attr("rx", 4)
+      .attr("ry", 4)
+      .attr("width", gridSize)
+      .attr("height", gridSize)
+      .attr("class", "bordered minute")
+      .style("fill", "red")//colors[0])
+      .attr("x", function(d, i) { return (i % times.length) * gridSize; })
+      .attr("y", function(d, i) { return Math.floor(i / 24) * gridSize; })
 
     /************** SLIDE TRANSITION FUNCTIONS **************/
-    /*** SLIDE 1 ***/
-    d3.select("#slide-1").on('slidein', function() {});
-    d3.select("#slide-1").on('slideout', function() {});
 
     /*** SLIDE 2 -- JAPAN HIGHLIGHT ***/
     d3.select("#slide-2").on('slidein', function() {
+      svg.selectAll(".axis").transition().duration(1000).attr("opacity", 1);
       svg.select("#JapanHighlight")
         .transition().duration(1000)
         .attr("opacity", .4);
@@ -159,6 +207,7 @@
 
     /*** SLIDE 3 -- WINTER BREAK HIGHLIGHT ***/
     d3.select("#slide-3").on('slidein', function() {
+      svg.selectAll(".axis").transition().duration(1000).attr("opacity", 1);
       svg.select("#WinterBreakHighlght")
         .transition().duration(1000)
         .attr("opacity", .4);
@@ -172,6 +221,7 @@
 
     /*** SLIDE 4 -- 10000 STEPS ***/
     d3.select("#slide-4").on('slidein', function() {
+      svg.selectAll(".axis").transition().duration(1000).attr("opacity", 1);
       svg.select("#StepsLine")
         .transition().duration(1000)
         .attr("x2", width)
@@ -184,8 +234,7 @@
         .transition()
         .duration(1000)
         .attr("y", height)
-        .attr("height", 0)
-        .attr("opacity", 0);
+        .attr("height", 0);
 
       svg.select(".axisX")
         .transition().duration(1000)
@@ -206,12 +255,15 @@
 
     /*** SLIDE 5 -- FADE OUT LINE GRAPH BRING IN BAR GRAPH ***/
     d3.select("#slide-5").on('slidein', function() {
+      svg.selectAll(".axis").transition().duration(1000).attr("opacity", 1);
       svg.select("#lineGraphPath")
         .transition().duration(1000)
         .attr("opacity", 0);
 
       svg.selectAll(".monthBar")
         .transition().duration(1000)
+        .attr("x", function(d) { return barGraphX(d.month); })
+        .attr("width", barGraphX.bandwidth())
         .attr("height", function(d) { return height -  healthyBarGraphY(d.healthyCount); })
         .attr("y", function(d) { return healthyBarGraphY(d.healthyCount) })
         .attr("opacity", 1);
@@ -230,20 +282,27 @@
 
     /*** SLIDE 6 -- HIGHLIGHT SUMMER ***/
     d3.select("#slide-6").on('slidein', function() {
+      svg.selectAll(".axis").transition().duration(1000).attr("opacity", 1);
       svg.select(".axisY")
         .transition().duration(1000)
         .call(d3.axisLeft(healthyBarGraphY));
       svg.select("#yLabel")
         .text("# Times I Hit 10,000 Steps");
 
-      var t0 = svg.transition().duration(1000);
-      t0.selectAll(".monthBar")
+      svg.selectAll(".monthBar.school")
+        .transition().duration(1000)
+        .attr("x", function(d) { return barGraphX(d.month); })
+        .attr("width", barGraphX.bandwidth())
         .attr("height", function(d) { return height -  healthyBarGraphY(d.healthyCount); })
         .attr("y", function(d) { return healthyBarGraphY(d.healthyCount) })
         .attr("opacity", .2);
 
-      t1 = t0.transition().duration(500);
-      t1.selectAll("#June, #July, #Aug")
+      svg.selectAll(".monthBar.summer")
+        .transition().duration(1000)
+        .attr("x", function(d) { return barGraphX(d.month); })
+        .attr("width", barGraphX.bandwidth())
+        .attr("height", function(d) { return height -  healthyBarGraphY(d.healthyCount); })
+        .attr("y", function(d) { return healthyBarGraphY(d.healthyCount) })
         .attr("opacity", 1);
     });
     d3.select("#slide-6").on('slideout', function() {
@@ -251,6 +310,12 @@
 
     /*** SLIDE 7 -- SWITCH TO AVERAGE BAR GRAPH ***/
     d3.select("#slide-7").on('slidein', function() {
+      svg.selectAll(".axis").transition().duration(1000).attr("opacity", 1);
+      barGraphX.domain(months);
+
+      svg.select(".axisX")
+        .transition().duration(1000)
+        .call(d3.axisBottom(barGraphX));
       svg.select(".axisY")
         .transition().duration(1000)
         .call(d3.axisLeft(averageBarGraphY));
@@ -259,16 +324,50 @@
 
       svg.selectAll(".monthBar")
         .transition().duration(1000)
-        .attr("opacity", 1)
-        .attr("height", function(d) { return height - averageBarGraphY(d.average)})
-        .attr("y", function(d) { return averageBarGraphY(d.average); });
+        .attr("x", function(d) { return barGraphX(d.month); })
+        .attr("width", barGraphX.bandwidth())
+        .attr("height", function(d) { return height -  averageBarGraphY(d.average); })
+        .attr("y", function(d) { return averageBarGraphY(d.average) })
+        .attr("opacity", 1);
 
     });
     d3.select("#slide-7").on('slideout', function() {});
-    d3.select("#slide-8").on('slidein', function() {});
+    
+    /*** REMOVE SUMMER MONTHS, SLIDE MAY AND SEPTEMBER TO EACH OTHER ***/
+    d3.select("#slide-8").on('slidein', function() {
+      svg.select("#heatmapContainer").transition().duration(1000).attr("opacity", 0);
+      svg.selectAll(".axis").transition().duration(1000).attr("opacity", 1);
+
+      t0 = svg.transition().duration(1000);
+
+      t0.selectAll(".monthBar.summer")
+        .attr("y", height)
+        .attr("height", 0);
+
+      barGraphX.domain(monthsWithoutSummer);
+      t1 = t0.transition().duration(1000);
+
+      t1.selectAll(".monthBar.school")
+        .attr("x", function(d) { return barGraphX(d.month); })
+        .attr("width", barGraphX.bandwidth())
+        .attr("height", function(d) { return height -  averageBarGraphY(d.average); })
+        .attr("y", function(d) { return averageBarGraphY(d.average) });
+      t1.select(".axisX")
+        .call(d3.axisBottom(barGraphX));
+
+
+    });
     d3.select("#slide-8").on('slideout', function() {});
-    d3.select("#slide-9").on('slidein', function() {});
+    
+    d3.select("#slide-9").on('slidein', function() {
+      svg.selectAll(".axis").transition().duration(1000).attr("opacity", 0);
+      svg.selectAll(".monthBar").transition().duration(1000).attr("y", height).attr("height", 0);
+
+      svg.select("#heatmapContainer").transition().duration(1000).attr("opacity", 1);
+
+    });
     d3.select("#slide-9").on('slideout', function() {});
+    
     d3.select("#slide-10").on('slidein', function() {});
     d3.select("#slide-10").on('slideout', function() {});
 

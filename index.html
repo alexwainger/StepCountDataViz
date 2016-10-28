@@ -11,17 +11,19 @@
     <link href="https://fonts.googleapis.com/css?family=Roboto+Condensed:300,400" rel="stylesheet">
     
     <style>
+
     h2 {
         font-family: "Roboto Condensed:400";
         margin-top:10px;
         color:#f1eef6;
     }
-
+    rect.bordered {
+        stroke: #E6E6E6;
+        stroke-width:1px;   
+    }
     h3 {
         font-family: "Roboto Condensed:400";
         margin-top:30px;
-        color:#f1eef6;
-
     }
 
     h4 {
@@ -49,7 +51,7 @@
 
     .swiper-slide {
         width: 400px;
-        margin-left: 750px;
+        margin-left: 800px;
         text-align: center;
         font-size: 18px;
         font-family: 'Roboto Condensed:300';
@@ -93,7 +95,7 @@
                     <h4>Alternative Title: I'm A Lazy Shit During The Summer</h4>
                 </div>
                 <div class="col-md-4">
-                    <h3 align="right">By Alex Wainger</h3>
+                    <h3 align="right"><a href="https://github.com/alexwainger/StepCountDataViz">By Alex Wainger</a></h3>
                 </div>
             </div>
         </div>
@@ -143,7 +145,7 @@
         onProgress: testSlideChange,
         direction: 'vertical',
         freeMode: true,
-        slidesPerView: 1.33,
+        slidesPerView: 1.5,
         spaceBetween: 15,
         grabCursor: true,
         mousewheelControl: true
