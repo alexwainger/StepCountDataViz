@@ -12,7 +12,7 @@
     
     <style>
 
-    h2 {
+    h1 {
         font-family: "Roboto Condensed:400";
         margin-top:10px;
         color:#f1eef6;
@@ -23,6 +23,7 @@
     }
     h3 {
         font-family: "Roboto Condensed:400";
+        color:#f1eef6;
         margin-top:30px;
     }
 
@@ -42,9 +43,10 @@
     }
     .swiper-container {
         position: absolute;
-        top:0;
+        top:0px;
         left:0;
-        height: 90%;
+        height: 85%;
+        margin-top:75px;
         width:100%;
         z-index: 2;
     }
@@ -56,6 +58,7 @@
         font-size: 18px;
         font-family: 'Roboto Condensed:300';
         color:#045a8d;
+        opacity: .05;
 
         /* Center slide text vertically */
         display: -webkit-box;
@@ -76,10 +79,6 @@
         z-index: 2;
     }
 
-    .swiper-slide-prev, .swiper-slide-next {
-        opacity: .05;
-    }
-
     .swiper-slide-active {
         opacity: 1;
     }
@@ -91,11 +90,11 @@
         <div class="container">
             <div class="row">
                 <div class="col-md-8">
-                    <h2>Analyzing iPhone Pedometer Data</h2>
+                    <h1>Analyzing iPhone Pedometer Data</h1>
                     <h4>Alternative Title: I'm A Lazy Shit During The Summer</h4>
                 </div>
                 <div class="col-md-4">
-                    <h3 align="right"><a href="https://github.com/alexwainger/StepCountDataViz">By Alex Wainger</a></h3>
+                    <h3 align="right">By Alex Wainger</h3>
                 </div>
             </div>
         </div>
@@ -107,17 +106,17 @@
     </div>
     <div class="swiper-container">
         <div class="swiper-wrapper">
-            <div class="swiper-slide" id="slide-1">Slide 1!</div>
-            <div class="swiper-slide" id="slide-2">This was a particularly active trip to Japan that included hikes through the mountains and long days on my feet.</div>
-            <div class="swiper-slide" id="slide-3">In stark contrast, this is what happens when I come home from college for a month and proceed to play video games for the majority of the month.</div>
-            <div class="swiper-slide" id="slide-4">Fitbit has popularized the notion that 10,000 steps is a healthy goal to hit on a daily basis, so let's take a look at the days that I achieved that goal.</div>
-            <div class="swiper-slide" id="slide-5">Slide 5</div>
-            <div class="swiper-slide" id="slide-6">Slide 6</div>
-            <div class="swiper-slide" id="slide-7">Slide 7</div>
-            <div class="swiper-slide" id="slide-8">Slide 8</div>
-            <div class="swiper-slide" id="slide-9">Slide 9</div>
-            <div class="swiper-slide" id="slide-10">Slide 10</div>
-            
+            <div class="swiper-slide" id="slide-1"><p>I've always wanted a Fitbit, but have always been too cheap to get one. So instead of splurging on another device I don't really need, I extracted just over two years of data from Apple's built-in health app and made my own damn visualizations. On the left is a line graph showing the ups-and-downs of my walking habits. Pretty hard to digest, right? Scroll down to dive a little deeper into the data.</p></div>
+            <div class="swiper-slide" id="slide-2"><p>This two-week region was a particularly active trip to Japan that included a couple hikes through the mountains and a ton of long days on my feet.</p></div>
+            <div class="swiper-slide" id="slide-3"><p>In stark contrast, this is what happens when I come home from college for a month and proceed to play video games for the majority of winter break.</p></div>
+            <div class="swiper-slide" id="slide-4"><p>Fitbit has popularized the notion that 10,000 steps is a healthy goal to hit on a daily basis, so let's take a look at the days that I achieved that <span style="font-style:italic">lofty</span> goal.</p></div>
+            <div class="swiper-slide" id="slide-5">This bar graph gives you a breakdown of how often I get to 10,000 steps in a day, broken down by month. I usually do a pretty good job of hitting 10,000 steps at the beginning and the end of the school year, but as soon as summer break hits...</div>
+            <div class="swiper-slide" id="slide-6">...my walking goes to shit. You'd think that during the summer I'd be out frolicking in the sun, but summer break also means summer internships. And as a computer scientist, my past employers haven't always encouraged healthy walking habits. On the contrary, my ability to sit still and stare at a screen for hours has earned me bonus points as a software engineer, but demerits as a healthy human being.</div>
+            <div class="swiper-slide" id="slide-7">Taking a look now at my daily step count averages by month, the impact of summer jobs on my walking is even more evident.</div>
+            <div class="swiper-slide" id="slide-8">In fact, if you just take the summer months out, my average step count is almost perfectly correlated with the temperature. Winter in Providence RI is brutal, but as the weather gets warmer, I get more and more adventurous with my walking, only to crawl back into my hole when the cold rolls around again. But the summer-job-walking-slump throws that trend way out of wack.</div>
+            <div class="swiper-slide" id="slide-9">As a final illustration of my summer-time lethargy, take a gander at this heatmap. This one shows the average number of steps I take every hour of every day during the school year...</div>
+            <div class="swiper-slide" id="slide-10">...while this one depressingly shows how inactive I am during work. The only time I hit the highest threshold in back-to-back hours was Monday evenings, when you couldn't have paid me to sit still any longer.</div>
+            <div class="swiper-slide" id="fake-slide"></div>
         </div>
     </div>
 
@@ -145,7 +144,7 @@
         onProgress: testSlideChange,
         direction: 'vertical',
         freeMode: true,
-        slidesPerView: 1.5,
+        slidesPerView: 2,
         spaceBetween: 15,
         grabCursor: true,
         mousewheelControl: true

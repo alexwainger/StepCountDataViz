@@ -15,7 +15,10 @@
   var months = ["Jan", "Feb", "March", "April", "May", "June", "July", "Aug", "Sept", "Oct", "Nov", "Dec"];
   var monthsWithoutSummer = ["Jan", "Feb", "March", "April", "May", "Sept", "Oct", "Nov", "Dec"];
   var days = ["Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday", "Sunday"];
-  var times = ["12am", "1am", "2am", "3am", "4am", "5am", "6am", "7am", "8am", "9am", "10am", "11am", "12pm", "1pm", "2pm", "3pm", "4pm", "5pm", "6pm", "7pm", "8pm", "9pm", "10pm", "11pm"];
+  var times = ["12am", "1am", "2am", "3am", "4am", "5am", "6am", "7am", "8am", "9am", "10am", "11am",
+               "12pm", "1pm", "2pm", "3pm", "4pm", "5pm", "6pm", "7pm", "8pm", "9pm", "10pm", "11pm"];
+  var colors = ["#fff7fb", "#ece7f2", "#d0d1e6", "#a6bddb","#74a9cf","#3690c0","#0570b0","#045a8d","#023858"]
+
   var isSummer = function(month) {
     return month == "June" || month == "July" || month == "Aug";
   };
@@ -23,11 +26,14 @@
   for (i = 0; i < 7*24; i++) {
     heatmapData.push(i);
   }
+
   var gridSize = Math.floor(width / 24);
+  var buckets = 9;
   var barColor = "#2b8cbe";
-  var lineColor = "#74a9cf";
-  var TenThouStepsColor = "#045a8d";
-  var highlightColor = "grey";
+  var barHighlightColor = "#ec7014";
+  var lineColor = "#3690c0";
+  var TenThouStepsColor = "#ec7014";
+  var boxHighlightColor = "#ec7014";
 
   /*** SCALES ***/
   var lineGraphX = d3.scaleTime().range([0, width]);
@@ -37,6 +43,8 @@
   var healthyBarGraphY = d3.scaleLinear().range([height, 0]);
   var averageBarGraphY = d3.scaleLinear().range([height, 0]);
 
+  var colorScale = d3.scaleQuantile().range(colors);
+
   /*** LOADING DATA ***/
   d3.queue()
     .defer(d3.csv, "data/steps_by_day.csv", function(d) {
@@ -45,23 +53,30 @@
       if (d.steps < 25000) {
         return d;
       }
+    }).defer(d3.csv, "data/summerHeatMap.csv", function(d) {
+      d.hour = +d.hour;
+      d.value = +d.value;
+      return d;
+    }).defer(d3.csv, "data/schoolHeatMap.csv", function(d) {
+      d.hour = +d.hour;
+      d.value = +d.value;
+      return d;
     })
     .await(ready)
 
   /*** FUNCTION TO CALL WHEN DATA IS LOADED ***/
-  function ready(error, datapoints) {
-
+  function ready(error, stepsByDay, summerHeatMapData, schoolHeatMapData) {
     /*** CALCULATING MONTHLY AVERAGES AND HEALTHY DAY COUNTS ***/
     month_counts = [];
     for (i = 0; i < 12; i++) {
       month_counts.push({"month": months[i], "healthyCount": 0, "count":0.0, "total":0.0});
     }
 
-    for (i = 0; i<datapoints.length; i++) {
-      month_num = datapoints[i].date.getMonth();
+    for (i = 0; i<stepsByDay.length; i++) {
+      month_num = stepsByDay[i].date.getMonth();
       month_counts[month_num].count++;
-      month_counts[month_num].total += datapoints[i].steps;
-      if (datapoints[i].steps >= 10000) {
+      month_counts[month_num].total += stepsByDay[i].steps;
+      if (stepsByDay[i].steps >= 10000) {
         month_counts[month_num].healthyCount++;
       }
     }
@@ -76,13 +91,15 @@
       .y(function(d) { return lineGraphY(d.steps); }).curve(d3.curveMonotoneX);
 
     /*** SETTING SCALES' DOMAINS ***/
-    lineGraphX.domain(d3.extent(datapoints, function(d) { return d.date; }));
-    lineGraphY.domain([0, d3.max(datapoints, function(d) { return d.steps; })]);
+    lineGraphX.domain(d3.extent(stepsByDay, function(d) { return d.date; }));
+    lineGraphY.domain([0, d3.max(stepsByDay, function(d) { return d.steps; })]);
 
     barGraphX.domain(months);
     healthyBarGraphY.domain([0, d3.max(month_counts, function(d) { return d.healthyCount; })]);
     averageBarGraphY.domain([0, d3.max(month_counts, function(d) { return d.average; })]);
 
+    colorScale.domain([0, d3.max(schoolHeatMapData, function (d) { return d.value; })])
+    console.log(colorScale.quantiles());
     /*** BAR GRAPH BARS, ZERO HEIGHT ***/
     svg.selectAll(".monthBar")
       .data(month_counts).enter().append("rect")
@@ -120,7 +137,7 @@
     /*** LINE GRAPH LINE ***/
     svg.append("path")
       .attr("id", "lineGraphPath")
-      .attr("d", line(datapoints))
+      .attr("d", line(stepsByDay))
       .attr("fill", "none")
       .attr("stroke", lineColor)
       .attr("stroke-width", "1px")
@@ -133,7 +150,7 @@
       .attr("y", 0)
       .attr("width", lineGraphX(parseDate("2015-06-05")) - lineGraphX(parseDate("2015-05-10")))
       .attr("height", height)
-      .attr("fill", highlightColor)
+      .attr("fill", boxHighlightColor)
       .attr("opacity", 0);
 
     svg.append("rect").attr("id", "WinterBreakHighlght")
@@ -141,7 +158,7 @@
       .attr("y", 0)
       .attr("width", lineGraphX(parseDate("2016-01-25")) - lineGraphX(parseDate("2015-12-15")))
       .attr("height", height)
-      .attr("fill", highlightColor)
+      .attr("fill", boxHighlightColor)
       .attr("opacity", 0);
 
     /*** LINE GRAPH 10,000 STEP LINE ***/
@@ -179,14 +196,36 @@
         .attr("transform", "translate(" + gridSize / 2 + ", -6)")
         .attr("class", "timeLabel");
 
+    /*** HEATMAP LEGEND ***/
+    var legend = heatmapContainer.append("g")
+      .attr("id", "legend")
+      .attr("transform", "translate(0," + (gridSize * (days.length + 2)) + ")")
+      .selectAll(".legendElement")
+      .data([0].concat(colorScale.quantiles())).enter()
+      .append("g").attr("class", "legendElement");
+
+    legend.append("rect")
+      .attr("x", function(d, i) { return gridSize * 2 * i; })
+      .attr("y", 0)
+      .attr("width", gridSize * 2)
+      .attr("height", gridSize)
+      .style("fill", function(d, i) { return colors[i]; });
+
+    legend.append("text")
+      .text(function(d) { return "≥ " + Math.round(d); })
+      .attr("x", function(d, i) { return gridSize * 2 * i + (gridSize / 2); })
+      .attr("y", -4)
+      .attr("font-size", "12px");
+
+    /*** HEATMAP CELLS ***/
     heatmapContainer.selectAll("rect.minute")
-      .data(heatmapData).enter().append("rect")
+      .data(schoolHeatMapData).enter().append("rect")
       .attr("rx", 4)
       .attr("ry", 4)
       .attr("width", gridSize)
       .attr("height", gridSize)
       .attr("class", "bordered minute")
-      .style("fill", "red")//colors[0])
+      .style("fill", colors[0])
       .attr("x", function(d, i) { return (i % times.length) * gridSize; })
       .attr("y", function(d, i) { return Math.floor(i / 24) * gridSize; })
 
@@ -266,7 +305,8 @@
         .attr("width", barGraphX.bandwidth())
         .attr("height", function(d) { return height -  healthyBarGraphY(d.healthyCount); })
         .attr("y", function(d) { return healthyBarGraphY(d.healthyCount) })
-        .attr("opacity", 1);
+        .attr("opacity", 1)
+        .style("fill", barColor);
 
       svg.select(".axisX")
         .transition().duration(1000)
@@ -303,7 +343,8 @@
         .attr("width", barGraphX.bandwidth())
         .attr("height", function(d) { return height -  healthyBarGraphY(d.healthyCount); })
         .attr("y", function(d) { return healthyBarGraphY(d.healthyCount) })
-        .attr("opacity", 1);
+        .attr("opacity", 1)
+        .style("fill", barHighlightColor);
     });
     d3.select("#slide-6").on('slideout', function() {
     });
@@ -328,7 +369,8 @@
         .attr("width", barGraphX.bandwidth())
         .attr("height", function(d) { return height -  averageBarGraphY(d.average); })
         .attr("y", function(d) { return averageBarGraphY(d.average) })
-        .attr("opacity", 1);
+        .attr("opacity", 1)
+        .style("fill", barColor);
 
     });
     d3.select("#slide-7").on('slideout', function() {});
@@ -365,10 +407,19 @@
 
       svg.select("#heatmapContainer").transition().duration(1000).attr("opacity", 1);
 
+      svg.selectAll("rect.minute")
+        .data(schoolHeatMapData)
+        .transition().duration(1000)
+        .style("fill", function(d) { return colorScale(d.value); });
+
     });
     d3.select("#slide-9").on('slideout', function() {});
-    
-    d3.select("#slide-10").on('slidein', function() {});
+    d3.select("#slide-10").on('slidein', function() {
+      svg.selectAll("rect.minute")
+        .data(summerHeatMapData)
+        .transition().duration(1000)
+        .style("fill", function(d) { return colorScale(d.value); });        
+    });
     d3.select("#slide-10").on('slideout', function() {});
 
   };
